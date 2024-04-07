@@ -2,7 +2,9 @@
 # define INS_h
 
 # include <Eigen/Eigen>
+# include <iostream>
 # include <QFile>
+# include <math.h>
 
 // 文件概述 2021年3月23日
 // 本文件包含了INS的相关类和函数，包括：

@@ -1,8 +1,8 @@
 #include "INS.h"
 #include <Eigen/Eigen>
 # include <iostream>
-//#include <QString>
-//#include <QFile>
+#include <QString>
+#include <QFile>
 #include <QDebug>
 
 using namespace std;
@@ -184,7 +184,7 @@ void INSerror::loadData(QString filepath){
     // 读取文件
     QFile file(filepath);
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text)){
-        qDebug()<<"INSerror file open error!";
+        cout<<"INSerror file open error!"<<endl;
         return;
     }
     QTextStream in(&file);
@@ -214,7 +214,7 @@ void INSerror::loadData(QString filepath){
         this->dg(i)=data[i+15][0];
     }
     this->dth=data[18][0];
-    qDebug()<<"error";
+    cout<<"error"<<endl;
     cout<<Ea<<endl<<Eg<<endl<<Ka<<endl<<Kg<<endl<<da<<endl<<dg<<endl<<"dth: "<<dth<<endl;
 }
 

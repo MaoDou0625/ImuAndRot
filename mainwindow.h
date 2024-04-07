@@ -2,9 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <Eigen/Eigen>
-#include <QtCharts>
 #include <QSerialPortInfo>
+#include <QObject>
+#include <QDir>
+#include <QFile>
+#include <QtCharts>
+#include <Eigen/Eigen>
 #include "portthread.h"
 #include "navigation.h"
 
@@ -15,10 +18,12 @@ QT_END_NAMESPACE
 class MainWindow;
 class Plot;
 using namespace Eigen;
+//class DataFrame;
 
 // 绘图类
 class Plot{
 public:
+    //Plot();
     //图表
     QChart* Chart;
     //横坐标轴
@@ -205,5 +210,7 @@ private:
 
     Navigation navthread;
 };
+
+
 
 #endif // MAINWINDOW_H

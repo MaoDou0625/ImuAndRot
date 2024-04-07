@@ -1,6 +1,11 @@
 #include "navigation.h"
 #include <iostream>
 #include <QCoreApplication>
+#include <QQueue>
+#include <QMutex>
+#include <QWaitCondition>
+#include <QThread>
+#include <Eigen/Eigen>
 #include "INS.h"
 
 using namespace Eigen;
