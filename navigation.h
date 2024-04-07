@@ -2,11 +2,14 @@
 #define NAVIGATION_H
 
 
+#include <iostream>
+#include <QCoreApplication>
 #include <QQueue>
 #include <QMutex>
 #include <QWaitCondition>
 #include <QThread>
-#include <Eigen/Eigen>
+//#include <QObject>
+#include <Eigen/Dense>
 
 using namespace Eigen;
 
