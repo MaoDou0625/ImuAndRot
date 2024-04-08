@@ -68,20 +68,48 @@ public:
 class Data:public QObject{
     Q_OBJECT
 public:
-    // 构造函数
-    //Data(QObject *parent=nullptr);
-    // imu单点数据
-    double imu[7];
-    // rot单点数据
-    double rot[3];
-    // imu1s累加
-    double imu1s[7];
-    // rot1s累加
-    double rot1s[3];
-    // imu1s累加次数
-    uint imu1sNum=0;
-    // rot1s累加次数
-    uint rot1sNum=0;
+    //数据帧格式
+    struct inDataFrame{
+        uint start;//帧头
+        uint type1;//分类1
+        uint lens1;//帧长1
+        uint type2;//分类2
+        uint lens2;//帧长2
+        uint end;//帧尾
+    }indata;
+
+    struct imuFrame{
+        quint32 time;
+        qint32 wx;
+        quint16 tx;
+        qint32 wy;
+        quint16 ty;
+        qint32 wz;
+        quint16 tz;
+        quint8 ax1;
+        quint8 ax2;
+        quint8 ay1;
+        quint8 ay2;
+        quint8 az1;
+        quint8 az2;
+    }imutmp;
+
+    struct rotFrame{
+        quint32 time;
+        qint32 out;
+        qint32 tmp1;
+        qint32 mid;
+        qint32 tmp2;
+        qint32 inn;
+        qint32 tmp3;
+    }rottmp;
+
+    // 单点数据
+    double imu[7]; double rot[4];
+    // 1s累加
+    double imu1s[7]; double rot1s[4];
+    // 累加次数
+    uint imu1sNum=0; uint rot1sNum=0;
 
     // 对准数据数量
     int alignnum;
@@ -95,20 +123,20 @@ public:
     // 更新imu数据
     bool updateImu(double imu[7]);
     // 更新rot数据
-    bool updateRot(double rot[3]);
+    bool updateRot(double rot[4]);
 
     // imu数据转QString
-    QString ImutoString();
+    QString ImuToString();
     // rot数据转QString
-    QString RottoString();
+    QString RotToString();
     // imu1s数据转QString
-    QString Imu1stoString();
+    QString Imu1sToString();
     // rot1s数据转QString
-    QString Rot1stoString();
+    QString Rot1sToString();
 
 signals:
     void sendImu(const double imu[7]);
-    void sendRot(const double rot[3]);
+    void sendRot(const double rot[4]);
 };
 
 
@@ -138,17 +166,18 @@ private:
     void SetButton();
     void StartWork();
     void recieve(const QByteArray &s);
+    void decode(QByteArray datain,int type,Data &dataout);
     void shakehand();
     void shakehand2();
     void sendPort();
     void ShowErrot(const QString &s);
     void ShowImu(const double imu[7]);
-    void ShowRot(const double rot[3]);
+    void ShowRot(const double rot[4]);
     void ShowNav(const VectorXd avp);
 
     void StartNav();
 
-    void RotSet(uint axis,uint mode,double para1,double para2,double time);
+    void RotSet();
 
     QSerialPortInfo portInfo;
     PortThread readThread;
@@ -165,6 +194,30 @@ private:
         uint type2;
         uint lens2;
         uint end;//可去除
+    };
+    struct imuFrame{
+        quint32 time;
+        qint32 wx;
+        quint16 tx;
+        qint32 wy;
+        quint16 ty;
+        qint32 wz;
+        quint16 tz;
+        quint8 ax1;
+        quint8 ax2;
+        quint8 ay1;
+        quint8 ay2;
+        quint8 az1;
+        quint8 az2;
+    };
+    struct rotFrame{
+        quint32 time;
+        qint32 out;
+        qint32 tmp1;
+        qint32 mid;
+        qint32 tmp2;
+        qint32 inn;
+        qint32 tmp3;
     };
     struct inData{
         int index;

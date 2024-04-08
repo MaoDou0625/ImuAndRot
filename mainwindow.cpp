@@ -53,8 +53,8 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::Init(){
-    //帧头 帧位 不定长度26或16字节
-    ind_frame={0xfa,0x69,26,0x72,16,0xee};
+    //帧头 帧位 均为32字节
+    ind_frame={0xfa,0x69,32,0x72,32,0xee};
     //imu数据
     ind_resolve={};
     dataTemp.clear();
@@ -136,9 +136,10 @@ void MainWindow::SetPortWrite(){
     }
  }
 
-void MainWindow::RotSet(uint axis,uint mode,double para1,double para2,double time){
+void MainWindow::RotSet(){
     QByteArray data;
     data.resize(14);
+    int axis=1;
     switch (axis) {
     case 1:
         break;
@@ -244,26 +245,23 @@ void MainWindow::recieve(const QByteArray &data){
                 &&(uint)(uchar)s[pos+ind_frame.lens1-1]==ind_frame.end){
                 //是imu帧头
                 dataImuNum++;
-                imusp[0]=(uchar)s[pos+10]<<24|(uchar)s[pos+9]<<16|(uchar)s[pos+8]<<8|(uchar)s[pos+7];
-                imusp[1]=(uchar)s[pos+14]<<24|(uchar)s[pos+13]<<16|(uchar)s[pos+12]<<8|(uchar)s[pos+11];
-                imusp[2]=(uchar)s[pos+18]<<24|(uchar)s[pos+17]<<16|(uchar)s[pos+16]<<8|(uchar)s[pos+15];
-                imusp[3]=(uchar)s[pos+19]-(uchar)s[pos+20];
-                imusp[4]=(uchar)s[pos+21]-(uchar)s[pos+22];
-                imusp[5]=(uchar)s[pos+23]-(uchar)s[pos+24];
-                imusp[6]=((uchar)s[pos+3]<<24|(uchar)s[pos+4]<<16|(uchar)s[pos+5]<<8|(uchar)s[pos+6])*1.0/\
-                           10000.0;
+                //解析imu数据，帧头2位，递增数1位，时间4位，陀螺数据3*4位，温度3*2位，加速度数据3*4位
+                //截取一帧imu数据
+                QByteArray dataimu=s.mid(pos+3,ind_frame.lens1-4);
+                //imu数据解帧
+                decode(dataimu,1,tmpdata);
 
-                //更新tmpdata
-                tmpdata.updateImu(imusp);
+
                 // 保存数据
                 if(Saving){
+                    // imu数据转为字符串，空格分隔
+                    dataimusp=tmpdata.ImuToString();              
                     fileimu.write(dataimusp.toUtf8());
                 }
                 if(Naving){
                     // 导航
-                    navthread.receiveData(imusp);
+                    navthread.receiveData(tmpdata.imu);
                 }
-
                 // 寻找下一个帧头
                 pos=s.indexOf(ind_frame.start,pos+ind_frame.lens1);
 
@@ -271,20 +269,13 @@ void MainWindow::recieve(const QByteArray &data){
                        &&(uint)(uchar)s[pos+ind_frame.lens2-1]==ind_frame.end){
                 // 是rot帧头2
                 dataRotNum++;
-                rot[0]=((uchar)s[pos+10]<<24|(uchar)s[pos+9]<<16|(uchar)s[pos+8]<<8|(uchar)s[pos+7])*1.0/\
-                         0x400000*360;
-                rot[1]=((uchar)s[pos+14]<<24|(uchar)s[pos+13]<<16|(uchar)s[pos+12]<<8|(uchar)s[pos+11])*1.0/\
-                         0x400000*360;
-                rot[2]=((uchar)s[pos+3]<<24|(uchar)s[pos+4]<<16|(uchar)s[pos+5]<<8|(uchar)s[pos+6])*1.0/10000;
-
-                //更新data
-                tmpdata.updateRot(rot);
-                /*
-                if(tmpdata.updateRot(rot)){
-                    // 如果数据超过1s，更新图表
-                    ShowRot(tmpdata.rot);
-                }*/
+                //解析rot数据
+                QByteArray datarot=s.mid(pos+3,ind_frame.lens2-4);
+                //rot数据解帧
+                decode(datarot,2,tmpdata);
                 if(Saving){
+                    // rot数据转为字符串，空格分隔
+                    datarotsp=tmpdata.RotToString();
                     filerot.write(datarotsp.toUtf8());
                 }
                 // 寻找下一个帧头
@@ -299,6 +290,32 @@ void MainWindow::recieve(const QByteArray &data){
             dataTemp=s.right(lens);
             break;
         }
+    }
+}
+
+//imu数据解帧
+void MainWindow::decode(QByteArray datain,int type,Data &dataout){
+    QDataStream in(datain);
+    in.setByteOrder(QDataStream::ByteOrder::LittleEndian);
+
+    imuFrame imu;
+    double imusp[7];
+    double rotsp[4];
+    rotFrame rot;
+    switch (type) {
+        case 1:
+            in>>imu.time>>imu.wx>>imu.tx>>imu.wy>>imu.ty>>imu.wz>>imu.tz>>imu.ax1>>imu.ax2>>imu.ay1>>imu.ay2>>imu.az1>>imu.az2;
+            imusp[0]=imu.wx;imusp[1]=imu.wy;imusp[2]=imu.wz;
+            imusp[3]=imu.ax1-imu.ax2;imusp[4]=imu.ay1-imu.ay2;imusp[5]=imu.az1-imu.az2;
+            imusp[6]=imu.time;
+            dataout.updateImu(imusp);
+            break;
+        case 2:
+            in>>rot.time>>rot.inn>>rot.tmp3>>rot.mid>>rot.tmp2>>rot.out>>rot.tmp1;
+            rotsp[0]=rot.inn;rotsp[1]=rot.mid;rotsp[2]=rot.out;
+            rotsp[3]=rot.time;
+            dataout.updateRot(rotsp);
+            break;
     }
 }
 
@@ -482,6 +499,22 @@ bool Data::updateRot(double rot[3]){
         return false;
     }
 }
+
+QString Data::ImuToString(){
+    QString str;
+    str=QString::number(this->imu[0])+" "+QString::number(this->imu[1])+" "+QString::number(this->imu[2])+" "\
+            +QString::number(this->imu[3])+" "+QString::number(this->imu[4])+" "+QString::number(this->imu[5])+" "\
+            +QString::number(this->imu[6])+"\n";
+    return str;
+}
+
+QString Data::RotToString(){
+    QString str;
+    str=QString::number(this->rot[0])+" "+QString::number(this->rot[1])+" "+QString::number(this->rot[2])+" "\
+    +QString::number(this->rot[3])+"\n";
+    return str;
+}
+
 
 
 void Plot::init(){
