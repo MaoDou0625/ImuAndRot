@@ -42,6 +42,8 @@ MainWindow::MainWindow(QWidget *parent)
     //将sendRot信号与ShowRot槽函数连接
     connect(&tmpdata,&Data::sendRot,this,&MainWindow::ShowRot);
     connect(&navthread,&Navigation::sendavp,this,&MainWindow::ShowNav);
+
+    connect(ui->outRSend,&QPushButton::clicked,this,&MainWindow::outRxisSet);
 }
 
 MainWindow::~MainWindow()
@@ -122,10 +124,40 @@ void MainWindow::SetPortRead(){
     }
 }
 void MainWindow::SetPortWrite(){
-    /*
-    writeThread.setPort(ui->comWriteName->currentText(),\
-                        ui->comWriteBaud->currentText().toInt(),\
-                        1000,!P_Write_Con);*/
+    if(!P_Write_Con){//还未打开串口,初始化后打开串口
+        writeThread.setPortName(ui->comWriteName->currentText());
+        writeThread.setBaudRate(ui->comWriteBaud->currentText().toInt());
+        writeThread.openSerialPort();
+
+        //发送握手信号
+        QByteArray data;
+        data.resize(14);
+        data[0]=0x55;        data[1]=0xa5;
+        data[2]=0x55;        data[3]=0x0f;
+        data[4]=0x00;        data[5]=0x00;
+        data[6]=0x00;        data[7]=0x00;
+        data[8]=0x00;        data[9]=0x00;
+        data[10]=0x00;        data[11]=0x00;
+        data[12]=0x00;        data[13]=0xb3;
+        //write data
+        writeThread.writeData(data);
+    }else {
+        writeThread.closeSerialPort();
+    }
+ }
+
+void MainWindow::outRxisSet(){
+    QByteArray data;
+    data.resize(14);
+    data[0]=0x55;        data[1]=0xa5;
+    data[2]=0x55;        data[3]=0x12;
+    data[4]=0xa0;        data[5]=0xbb;
+    data[6]=0x0d;        data[7]=0x00;
+    data[8]=0x00;        data[9]=0x40;
+    data[10]=0x9c;        data[11]=0x00;
+    data[12]=0x00;        data[13]=0xfa;
+    //write data
+    writeThread.writeData(data);
 }
 
 void MainWindow::SetReadState(bool isOpen){

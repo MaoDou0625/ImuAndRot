@@ -147,6 +147,8 @@ private:
 
     void StartNav();
 
+    void outRxisSet();
+
     QSerialPortInfo portInfo;
     PortThread readThread;
     PortThread writeThread;
