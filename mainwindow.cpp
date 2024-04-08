@@ -36,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&writeThread,&PortThread::state,this,&MainWindow::SetWriteState);//连接状态
     connect(&readThread,&PortThread::dataReceived,this,&MainWindow::recieve);//接收数据
     connect(ui->ButtonHandCon,&QPushButton::clicked,this,&MainWindow::shakehand);//握手
+    connect(ui->ButtonHandCon_2,&QPushButton::clicked,this,&MainWindow::shakehand2);//握手
 
     //将sendImu信号与ShowImu槽函数连接
     connect(&tmpdata,&Data::sendImu,this,&MainWindow::ShowImu);
@@ -43,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&tmpdata,&Data::sendRot,this,&MainWindow::ShowRot);
     connect(&navthread,&Navigation::sendavp,this,&MainWindow::ShowNav);
 
-    connect(ui->outRSend,&QPushButton::clicked,this,&MainWindow::outRxisSet);
+    connect(ui->outRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
 }
 
 MainWindow::~MainWindow()
@@ -109,7 +110,7 @@ void MainWindow::SetPortRead(){
     auto waitTime=ui->LineReadReadTime->text().toInt(&ok);
     if(ok){
         if(!P_Read_Con){//还未打开串口,初始化后打开串口
-            ui->textDebug->clear();
+            //ui->textDebug->clear();
             Init();
             readThread.setPortName(ui->comReadName->currentText());
             readThread.setBaudRate(ui->comReadBaud->currentText().toInt());
@@ -129,27 +130,26 @@ void MainWindow::SetPortWrite(){
         writeThread.setBaudRate(ui->comWriteBaud->currentText().toInt());
         writeThread.openSerialPort();
 
-        //发送握手信号
-        QByteArray data;
-        data.resize(14);
-        data[0]=0x55;        data[1]=0xa5;
-        data[2]=0x55;        data[3]=0x0f;
-        data[4]=0x00;        data[5]=0x00;
-        data[6]=0x00;        data[7]=0x00;
-        data[8]=0x00;        data[9]=0x00;
-        data[10]=0x00;        data[11]=0x00;
-        data[12]=0x00;        data[13]=0xb3;
-        //write data
-        writeThread.writeData(data);
+
     }else {
         writeThread.closeSerialPort();
     }
  }
 
-void MainWindow::outRxisSet(){
+void MainWindow::RotSet(uint axis,uint mode,double para1,double para2,double time){
     QByteArray data;
     data.resize(14);
-    data[0]=0x55;        data[1]=0xa5;
+    switch (axis) {
+    case 1:
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+    default:
+        break;
+    }
+    data[0]=0xaa;        data[1]=0xa5;
     data[2]=0x55;        data[3]=0x12;
     data[4]=0xa0;        data[5]=0xbb;
     data[6]=0x0d;        data[7]=0x00;
@@ -202,6 +202,20 @@ void MainWindow::shakehand(){
     data.append(0x82);
     //write data
     readThread.writeData(data);
+}
+void MainWindow::shakehand2(){
+    //发送握手信号
+    QByteArray data;
+    data.resize(14);
+    data[0]=0xaa;        data[1]=0xa5;
+    data[2]=0x55;        data[3]=0x0f;
+    data[4]=0x00;        data[5]=0x00;
+    data[6]=0x00;        data[7]=0x00;
+    data[8]=0x00;        data[9]=0x00;
+    data[10]=0x00;        data[11]=0x00;
+    data[12]=0x00;        data[13]=0xb3;
+    //write data
+    writeThread.writeData(data);
 }
 
 void MainWindow::recieve(const QByteArray &data){

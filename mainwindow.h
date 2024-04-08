@@ -139,6 +139,7 @@ private:
     void StartWork();
     void recieve(const QByteArray &s);
     void shakehand();
+    void shakehand2();
     void sendPort();
     void ShowErrot(const QString &s);
     void ShowImu(const double imu[7]);
@@ -147,7 +148,7 @@ private:
 
     void StartNav();
 
-    void outRxisSet();
+    void RotSet(uint axis,uint mode,double para1,double para2,double time);
 
     QSerialPortInfo portInfo;
     PortThread readThread;
