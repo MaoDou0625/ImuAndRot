@@ -115,12 +115,12 @@
                   <widget class="QComboBox" name="comReadBaud">
                    <item>
                     <property name="text">
-                     <string>614400</string>
+                     <string>921600</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>921600</string>
+                     <string>614400</string>
                     </property>
                    </item>
                    <item>

@@ -10,134 +10,18 @@
 #include <Eigen/Eigen>
 #include "portthread.h"
 #include "navigation.h"
+#include "mainassist.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
-class MainWindow;
-class Plot;
+//class MainWindow;
+//class Plot;
 using namespace Eigen;
 //class DataFrame;
 
-// 绘图类
-class Plot{
-public:
-    //Plot();
-    //图表
-    QChart* Chart;
-    //横坐标轴
-    QValueAxis* xaxis;
-    //横坐标轴最小值
-    double xmin;
-    //横坐标轴最大值
-    double xmax;
 
-    //曲线数量
-    int num;
-    //纵坐标轴列表
-    QList<QValueAxis*> yaxis;
-    //曲线列表
-    QList<QLineSeries*> line;
-    //曲线颜色列表
-    QList<QColor> color;
-    //曲线名称列表
-    QList<QString> name;
-    // 曲线最小值
-    QList<double> ymin;
-    // 曲线最大值
-    QList<double> ymax;
-
-    // 初始化
-    void init();
-    // 添加曲线
-    void addLine(QString name,QColor color,double ymin,double ymax);
-    // 删除曲线
-    void delLine(int index);
-    // 更新曲线
-    void updateLine(int index,double x,double y);
-    // 更新曲线
-    void updateLine(int index,double x,double y,double z);
-    // 更新曲线
-    void updateLine(int index,double x,double y,double z,double w);
-    // 设置纵坐标轴范围
-    void setYRange(int index,double ymin,double ymax);
-};
-
-// 数据帧类
-class Data:public QObject{
-    Q_OBJECT
-public:
-    //数据帧格式
-    struct inDataFrame{
-        uint start;//帧头
-        uint type1;//分类1
-        uint lens1;//帧长1
-        uint type2;//分类2
-        uint lens2;//帧长2
-        uint end;//帧尾
-    }indata;
-
-    struct imuFrame{
-        quint32 time;
-        qint32 wx;
-        quint16 tx;
-        qint32 wy;
-        quint16 ty;
-        qint32 wz;
-        quint16 tz;
-        quint8 ax1;
-        quint8 ax2;
-        quint8 ay1;
-        quint8 ay2;
-        quint8 az1;
-        quint8 az2;
-    }imutmp;
-
-    struct rotFrame{
-        quint32 time;
-        qint32 out;
-        qint32 tmp1;
-        qint32 mid;
-        qint32 tmp2;
-        qint32 inn;
-        qint32 tmp3;
-    }rottmp;
-
-    // 单点数据
-    double imu[7]; double rot[4];
-    // 1s累加
-    double imu1s[7]; double rot1s[4];
-    // 累加次数
-    uint imu1sNum=0; uint rot1sNum=0;
-
-    // 对准数据数量
-    int alignnum;
-    // 对准数据
-    MatrixXd alignData;
-
-    Data();
-    // 初始化
-    void init();
-
-    // 更新imu数据
-    bool updateImu(double imu[7]);
-    // 更新rot数据
-    bool updateRot(double rot[4]);
-
-    // imu数据转QString
-    QString ImuToString();
-    // rot数据转QString
-    QString RotToString();
-    // imu1s数据转QString
-    QString Imu1sToString();
-    // rot1s数据转QString
-    QString Rot1sToString();
-
-signals:
-    void sendImu(const double imu[7]);
-    void sendRot(const double rot[4]);
-};
 
 
 
@@ -157,68 +41,35 @@ private:
     bool Saving;
     bool Naving;
 
-    void Init();
-    void ReadPort();
-    void SetPortRead();
-    void SetPortWrite();
+    void Init();//初始化
+    void ReadPort();//读取串口
+    void SetPortRead();//设置读取串口
+    void SetPortWrite();//设置输出串口
     void SetReadState(bool yes);
     void SetWriteState(bool yes);
     void SetButton();
     void StartWork();
-    void recieve(const QByteArray &s);
-    void decode(QByteArray datain,int type,Data &dataout);
-    void shakehand();
-    void shakehand2();
+    void recieve(const QByteArray &s);//接受数据，解帧
+    void decode(QByteArray datain,int type,Data &dataout);//解帧，无用
+    void shakehand();//发送握手协议（100惯导用）
+    void shakehand2();//发送握手协议（小三轴转台用）
     void sendPort();
-    void ShowErrot(const QString &s);
-    void ShowImu(const double imu[7]);
-    void ShowRot(const double rot[4]);
-    void ShowNav(const VectorXd avp);
+    void ShowErrot(const QString &s);//无用
+    void ShowImu(const double imu[7]);//展示数据
+    void ShowRot(const double rot[4]);//展示数据
+    void ShowNav(const VectorXd avp);//展示数据
 
-    void StartNav();
+    void StartNav();//开始导航
 
-    void RotSet();
+    void RotSet();//发送转台命令
 
-    QSerialPortInfo portInfo;
-    PortThread readThread;
-    PortThread writeThread;
-    QDir dir;
-    QFile fileimu;
-    QFile filerot;
-    //QString filepath;
+    QSerialPortInfo portInfo;//串口信息
+    PortThread readThread;//读取串口
+    PortThread writeThread;//发送串口
+    QDir dir;//文件夹
+    QFile fileimu;//文件名
+    QFile filerot;//文件名
 
-    struct inDataFrame{
-        uint start;
-        uint type1;
-        uint lens1;
-        uint type2;
-        uint lens2;
-        uint end;//可去除
-    };
-    struct imuFrame{
-        quint32 time;
-        qint32 wx;
-        quint16 tx;
-        qint32 wy;
-        quint16 ty;
-        qint32 wz;
-        quint16 tz;
-        quint8 ax1;
-        quint8 ax2;
-        quint8 ay1;
-        quint8 ay2;
-        quint8 az1;
-        quint8 az2;
-    };
-    struct rotFrame{
-        quint32 time;
-        qint32 out;
-        qint32 tmp1;
-        qint32 mid;
-        qint32 tmp2;
-        qint32 inn;
-        qint32 tmp3;
-    };
     struct inData{
         int index;
         int wx;
@@ -240,8 +91,8 @@ private:
     QValueAxis* xaxis2=new QValueAxis();
     int xmin=0;
     int xmax=1000;
-    inDataFrame ind_frame;
-    inData ind_resolve;
+    //inDataFrame ind_frame;
+    //inData ind_resolve;
     long int point[6];
     double rot[3];
     double imusp[7];
@@ -262,7 +113,7 @@ private:
     Plot groPlot;
     Plot accPlot;
 
-    Data tmpdata;
+    Data datain;
 
     Navigation navthread;
 };

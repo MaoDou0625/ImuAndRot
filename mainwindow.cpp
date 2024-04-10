@@ -39,9 +39,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->ButtonHandCon_2,&QPushButton::clicked,this,&MainWindow::shakehand2);//握手
 
     //将sendImu信号与ShowImu槽函数连接
-    connect(&tmpdata,&Data::sendImu,this,&MainWindow::ShowImu);
+    connect(&datain,&Data::sendImu,this,&MainWindow::ShowImu);
     //将sendRot信号与ShowRot槽函数连接
-    connect(&tmpdata,&Data::sendRot,this,&MainWindow::ShowRot);
+    connect(&datain,&Data::sendRot,this,&MainWindow::ShowRot);
     connect(&navthread,&Navigation::sendavp,this,&MainWindow::ShowNav);
 
     connect(ui->outRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
@@ -53,10 +53,7 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::Init(){
-    //帧头 帧位 均为32字节
-    ind_frame={0xfa,0x69,32,0x72,32,0xee};
-    //imu数据
-    ind_resolve={};
+    //ind_resolve={};
     dataTemp.clear();
     lostDataNum=0;
     dataImuNum=0;
@@ -129,8 +126,6 @@ void MainWindow::SetPortWrite(){
         writeThread.setPortName(ui->comWriteName->currentText());
         writeThread.setBaudRate(ui->comWriteBaud->currentText().toInt());
         writeThread.openSerialPort();
-
-
     }else {
         writeThread.closeSerialPort();
     }
@@ -220,69 +215,67 @@ void MainWindow::shakehand2(){
 }
 
 void MainWindow::recieve(const QByteArray &data){
-    //QStringList str_resolve;//解析后的数据
-    //QString datashow;
     QString dataimusp;//imu数据
     QString datarotsp;//rot数据
     auto s=dataTemp+data;// 将数据与之前的留下的帧头合并
     dataTemp.clear();// 清空之前的帧头
-    dataimusp.clear();//清空imu数据
-    datarotsp.clear();//清空rot数据
+    dataimusp.clear();// 清空imu数据
+    datarotsp.clear();// 清空rot数据
     //测试
     //ui->textDebug->append(s.toHex(' '));
 
     //开始位置
-    int pos=s.indexOf(ind_frame.start,1);
+    int pos=s.indexOf(datain.inframe.start,1);
     //最大长度
-    int lenmax=(ind_frame.lens1>ind_frame.lens2)?ind_frame.lens1:ind_frame.lens2;
+    int lenmax=max(datain.inframe.lens1,datain.inframe.lens2);
+    //(datain.inframe.lens1>datain.inframe.lens2)?datain.inframe.lens1:datain.inframe.lens2;
 
 
     // 解帧
     while(pos>=0){
         // 有一帧的长度
         if(pos+lenmax-1<s.size()){   //判断是否为帧头
-            if((uint)(uchar)s[pos+1]==ind_frame.type1\
-                &&(uint)(uchar)s[pos+ind_frame.lens1-1]==ind_frame.end){
+            if((uint)(uchar)s[pos+1]==datain.inframe.type1\
+                &&(uint)(uchar)s[pos+datain.inframe.lens1-1]==datain.inframe.end){
                 //是imu帧头
                 dataImuNum++;
                 //解析imu数据，帧头2位，递增数1位，时间4位，陀螺数据3*4位，温度3*2位，加速度数据3*4位
                 //截取一帧imu数据
-                QByteArray dataimu=s.mid(pos+3,ind_frame.lens1-4);
+                QByteArray dataimu=s.mid(pos+3,datain.inframe.lens1-4);
                 //imu数据解帧
-                decode(dataimu,1,tmpdata);
-
+                datain.updateImu(dataimu);
 
                 // 保存数据
                 if(Saving){
                     // imu数据转为字符串，空格分隔
-                    dataimusp=tmpdata.ImuToString();              
+                    dataimusp=datain.ImuToString();
                     fileimu.write(dataimusp.toUtf8());
                 }
                 if(Naving){
                     // 导航
-                    navthread.receiveData(tmpdata.imu);
+                    navthread.receiveData(datain.imu);
                 }
                 // 寻找下一个帧头
-                pos=s.indexOf(ind_frame.start,pos+ind_frame.lens1);
+                pos=s.indexOf(datain.inframe.start,pos+datain.inframe.lens1);
 
-            }else if((uint)(uchar)s[pos+1]==ind_frame.type2\
-                       &&(uint)(uchar)s[pos+ind_frame.lens2-1]==ind_frame.end){
+            }else if((uint)(uchar)s[pos+1]==datain.inframe.type2\
+                       &&(uint)(uchar)s[pos+datain.inframe.lens2-1]==datain.inframe.end){
                 // 是rot帧头2
                 dataRotNum++;
                 //解析rot数据
-                QByteArray datarot=s.mid(pos+3,ind_frame.lens2-4);
+                QByteArray datarot=s.mid(pos+3,datain.inframe.lens2-4);
                 //rot数据解帧
-                decode(datarot,2,tmpdata);
+                datain.updateRot(datarot);
                 if(Saving){
                     // rot数据转为字符串，空格分隔
-                    datarotsp=tmpdata.RotToString();
+                    datarotsp=datain.RotToString();
                     filerot.write(datarotsp.toUtf8());
                 }
                 // 寻找下一个帧头
-                pos=s.indexOf(ind_frame.start,pos+ind_frame.lens2);
+                pos=s.indexOf(datain.inframe.start,pos+datain.inframe.lens2);
             }else{
                 //不是帧头，寻找下一个帧头
-                pos=s.indexOf(ind_frame.start,pos+1);
+                pos=s.indexOf(datain.inframe.start,pos+1);
             }
         }else{
             //不够长度直接保存
@@ -298,10 +291,10 @@ void MainWindow::decode(QByteArray datain,int type,Data &dataout){
     QDataStream in(datain);
     in.setByteOrder(QDataStream::ByteOrder::LittleEndian);
 
-    imuFrame imu;
-    double imusp[7];
-    double rotsp[4];
-    rotFrame rot;
+    //imuFrame imu;
+    //double imusp[7];
+    //double rotsp[4];
+    /*rotFrame rot;
     switch (type) {
         case 1:
             in>>imu.time>>imu.wx>>imu.tx>>imu.wy>>imu.ty>>imu.wz>>imu.tz>>imu.ax1>>imu.ax2>>imu.ay1>>imu.ay2>>imu.az1>>imu.az2;
@@ -316,7 +309,7 @@ void MainWindow::decode(QByteArray datain,int type,Data &dataout){
             rotsp[3]=rot.time;
             dataout.updateRot(rotsp);
             break;
-    }
+    }*/
 }
 
 void MainWindow::ShowImu(const double imu[7]){
@@ -339,10 +332,10 @@ void MainWindow::ShowImu(const double imu[7]){
     //cout<<imu[0]<<' '<<imu[1]<<' '<<imu[2]<<' '<<imu[3]<<' '<<imu[4]<<' '<<imu[5]<<' '<<imu[6]<<endl;
 
 }
-void MainWindow::ShowRot(const double rot[3]){
+void MainWindow::ShowRot(const double rot[4]){
     ui->lcdrotx->display(rot[0]);
     ui->lcdrotz->display(rot[1]);
-    ui->lcdtime->display(rot[2]);
+    ui->lcdtime->display(rot[3]);
 }
 void MainWindow::ShowNav(const VectorXd avp){
     VectorXd avp0(10);
@@ -367,6 +360,7 @@ void MainWindow::StartWork(){
         Saving=false;
         ui->ButtonSaveStart->setText("开始保存");
         fileimu.close();
+        filerot.close();
     }else{
         QDateTime time=QDateTime::currentDateTime();
         QString str_time=time.toString("yyyy-MM-dd-hh-mm-ss");
@@ -419,221 +413,5 @@ void MainWindow::StartNav(){
         navthread.stopProcessing();
         Naving=false;
         ui->ButtonNavigation->setText("开始导航");
-    }
-}
-
-
-Data::Data(){
-    this->init();
-}
-void Data::init(){
-    // imu数据初始化
-    this->imu[0]=0;
-    this->imu[1]=0;
-    this->imu[2]=0;
-    this->imu[3]=0;
-    this->imu[4]=0;
-    this->imu[5]=0;
-    this->imu[6]=0;
-    // rot数据初始化
-    this->rot[0]=0;
-    this->rot[1]=0;
-    this->rot[2]=0;
-    // imu1s数据初始化
-    this->imu1s[0]=0;
-    this->imu1s[1]=0;
-    this->imu1s[2]=0;
-    this->imu1s[3]=0;
-    this->imu1s[4]=0;
-    this->imu1s[5]=0;
-    this->imu1s[6]=0;
-    this->imu1sNum=0;
-    this->rot1sNum=0;
-}
-
-bool Data::updateImu(double imu[7]){
-    // imu数据更新
-    this->imu[0]=imu[0];
-    this->imu[1]=imu[1];
-    this->imu[2]=imu[2];
-    this->imu[3]=imu[3];
-    this->imu[4]=imu[4];
-    this->imu[5]=imu[5];
-    this->imu[6]=imu[6];
-
-    // imu1s数据更新
-    this->imu1s[0]+=imu[0];
-    this->imu1s[1]+=imu[1];
-    this->imu1s[2]+=imu[2];
-    this->imu1s[3]+=imu[3];
-    this->imu1s[4]+=imu[4];
-    this->imu1s[5]+=imu[5];
-    this->imu1s[6]=imu[6];
-    this->imu1sNum++;
-
-    // 若imu1s数据超过1s，返回true
-    if(this->imu1sNum>=1000){
-        this->imu1sNum=0;
-        emit sendImu(this->imu1s);
-        this->init();
-        return true;
-    }else {
-        return false;
-    }
-}
-
-bool Data::updateRot(double rot[3]){
-    // rot数据更新
-    this->rot[0]=rot[0];
-    this->rot[1]=rot[1];
-    this->rot[2]=rot[2];
-
-    this->rot1sNum++;
-
-    // 若rot数据超过1s，返回true
-    if(this->rot1sNum>=1000){
-        this->rot1sNum=0;
-        emit sendRot(this->rot);
-        return true;
-    }else {
-        return false;
-    }
-}
-
-QString Data::ImuToString(){
-    QString str;
-    str=QString::number(this->imu[0])+" "+QString::number(this->imu[1])+" "+QString::number(this->imu[2])+" "\
-            +QString::number(this->imu[3])+" "+QString::number(this->imu[4])+" "+QString::number(this->imu[5])+" "\
-            +QString::number(this->imu[6])+"\n";
-    return str;
-}
-
-QString Data::RotToString(){
-    QString str;
-    str=QString::number(this->rot[0])+" "+QString::number(this->rot[1])+" "+QString::number(this->rot[2])+" "\
-    +QString::number(this->rot[3])+"\n";
-    return str;
-}
-
-
-
-void Plot::init(){
-    // 图标初始化
-    this->Chart=new QChart();
-    // 坐标轴初始化
-    this->xaxis=new QValueAxis();
-    // 坐标轴范围
-    this->xmin=0;
-    this->xmax=60;
-    // 坐标设置
-    this->xaxis->setMin(this->xmin);
-    this->xaxis->setMax(this->xmax);
-    this->xaxis->setLabelFormat("%.1f");
-    this->Chart->addAxis(this->xaxis,Qt::AlignBottom);
-
-    // 曲线数量
-    this->num=0;
-
-    // 曲线列表清空
-    this->line.clear();
-    // 曲线颜色列表清空
-    this->color.clear();
-    // 曲线名称列表清空
-    this->name.clear();
-    // 曲线最小值列表清空
-    this->ymin.clear();
-    // 曲线最大值列表清空
-    this->ymax.clear();
-    // 纵坐标轴列表清空
-    this->yaxis.clear();
-}
-
-void Plot::addLine(QString name,QColor color,double ymin,double ymax){
-    // 曲线数量
-    this->num++;
-    // 纵坐标轴列表增加一个
-    this->yaxis.append(new QValueAxis());
-    // 曲线列表增加一个
-    this->line.append(new QLineSeries());
-    // 曲线颜色列表增加一个
-    this->color.append(color);
-    // 曲线名称列表增加一个
-    this->name.append(name);
-    // 曲线最小值列表增加一个
-    this->ymin.append(ymin);
-    // 曲线最大值列表增加一个
-    this->ymax.append(ymax);
-
-    // 坐标设置
-    this->yaxis[this->num-1]->setMin(this->ymin[this->num-1]);
-    this->yaxis[this->num-1]->setMax(this->ymax[this->num-1]);
-    this->yaxis[this->num-1]->setLabelFormat("%.1f");
-
-    // 坐标轴添加到图表中
-    this->Chart->addAxis(this->yaxis[this->num-1],Qt::AlignLeft);
-
-    // 曲线添加到图表中
-    this->Chart->addSeries(this->line[this->num-1]);
-
-    // 曲线附加到坐标轴
-    this->line[this->num-1]->attachAxis(this->xaxis);
-    this->line[this->num-1]->attachAxis(this->yaxis[this->num-1]);
-
-    // 曲线颜色
-    this->line[this->num-1]->setColor(this->color[this->num-1]);
-
-    // 曲线名称
-    this->line[this->num-1]->setName(this->name[this->num-1]);
-
-}
-
-void Plot::delLine(int index){
-    // 曲线数量
-    this->num--;
-    // 曲线列表删除一个
-    this->line.removeAt(index);
-    // 曲线颜色列表删除一个
-    this->color.removeAt(index);
-    // 曲线名称列表删除一个
-    this->name.removeAt(index);
-    // 曲线最小值列表删除一个
-    this->ymin.removeAt(index);
-    // 曲线最大值列表删除一个
-    this->ymax.removeAt(index);
-    // 纵坐标轴列表删除一个
-    this->yaxis.removeAt(index);
-    // 曲线删除
-    this->Chart->removeSeries(this->line[index]);
-    // 坐标轴删除
-    this->Chart->removeAxis(this->yaxis[index]);
-}
-
-void Plot::updateLine(int index,double x,double y){
-    // 曲线添加数据
-    this->line[index]->append(QPointF(x,y));
-
-    //如果是第一个数据，围绕数据绝对值的0.1倍设置纵坐标轴范围
-    if(this->line[index]->count()==1){
-        this->ymin[index]=y-0.1*abs(y);
-        this->ymax[index]=y+0.1*abs(y);
-        this->yaxis[index]->setMin(this->ymin[index]);
-        this->yaxis[index]->setMax(this->ymax[index]);
-    }
-    // 如果数据超出范围，重新设置坐标轴范围
-    if(y>this->ymax[index]){
-        this->ymax[index]=y;
-        this->yaxis[index]->setMax(this->ymax[index]);
-    }
-    if(y<this->ymin[index]){
-        this->ymin[index]=y;
-        this->yaxis[index]->setMin(this->ymin[index]);
-    }
-    // 如果时间超出范围，重新设置坐标轴范围
-    if(x>this->xmax){
-        this->xmin=floor(x/xmax)*xmax;
-        this->xmax=this->xmin+60;
-        this->xaxis->setMin(this->xmin);
-        this->xaxis->setMax(this->xmax);
-        this->line[index]->clear();
     }
 }

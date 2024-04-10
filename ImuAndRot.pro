@@ -21,12 +21,14 @@ INCLUDEPATH += D:\qtcode\eigen-3.4.0
 SOURCES += \
     INS.cpp \
     main.cpp \
+    mainassist.cpp \
     mainwindow.cpp \
     navigation.cpp \
     portthread.cpp
 
 HEADERS += \
     INS.h \
+    mainassist.h \
     mainwindow.h \
     navigation.h \
     portthread.h
