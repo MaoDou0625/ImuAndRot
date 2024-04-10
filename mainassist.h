@@ -63,6 +63,44 @@ public:
         uint end;//帧尾
     }inframe;
 
+    struct outDataFrame{
+        uint len;
+        quint8 start1;
+        quint8 start2;
+        quint8 start3;
+
+        quint8 innpos;
+        quint8 innrelapos;
+        quint8 innv;
+        quint8 innsway;
+        quint8 innenable;
+        quint8 innstop;
+
+        quint8 midpos;
+        quint8 midrelapos;
+        quint8 midv;
+        quint8 midsway;
+        quint8 midenable;
+        quint8 midstop;
+
+        quint8 outpos;
+        quint8 outrelapos;
+        quint8 outv;
+        quint8 outsway;
+        quint8 outenable;
+        quint8 outstop;
+
+        quint32 para1;
+        quint32 para2;
+        quint8 ccwdirect;
+        quint8 cwdirect;
+        quint8 enable;
+        quint8 disenable;
+
+        quint8 end;
+
+    }outframe;
+
     struct imuFrame{
         quint32 time;
         qint32 wx;
@@ -88,6 +126,11 @@ public:
         qint32 inn;
         qint32 tmp3;
     }rottmp;
+
+    //惯导握手数据
+    QByteArray imushakehand;
+    //转台握手数据
+    QByteArray rotshakehand;
 
     // 单点数据
     double imu[7]; double rot[4];
@@ -122,6 +165,9 @@ public:
     QString Imu1sToString();
     // rot1s数据转QString
     QString Rot1sToString();
+
+    //转台命令输出
+    QByteArray rotSend(uint type,double data1,double data2);
 
 signals:
     void sendImu(const double imu[7]);

@@ -45,6 +45,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&navthread,&Navigation::sendavp,this,&MainWindow::ShowNav);
 
     connect(ui->outRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
+    connect(ui->midRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
+    connect(ui->innRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
 }
 
 MainWindow::~MainWindow()
@@ -132,28 +134,67 @@ void MainWindow::SetPortWrite(){
  }
 
 void MainWindow::RotSet(){
-    QByteArray data;
-    data.resize(14);
-    int axis=1;
-    switch (axis) {
-    case 1:
-        break;
-    case 2:
-        break;
-    case 3:
-        break;
-    default:
-        break;
+    QString btnName = QObject::sender()->objectName();
+    QByteArray datasend;
+    datasend.resize(datain.outframe.len);
+    datasend.fill(0);
+    datasend[0]=datain.outframe.start1;   datasend[1]=datain.outframe.start2;
+    datasend[2]=datain.outframe.start3;
+    uint style=0;
+    double paratmp1=0;
+    double paratmp2=0;
+    quint32 para1=0;
+    quint32 para2=0;
+
+    // 确定4字节状态
+    if (btnName==ui->innRSend->objectName()){
+        paratmp1=ui->innRPar1->text().toDouble();
+        paratmp2=ui->innRPar2->text().toDouble();
+        switch (ui->innRMode->currentIndex()) {
+        case 0: style=11;break;
+        case 1: style=12;break;
+        case 2: style=13;break;
+        case 3: style=14;break;
+        }
+    }else if(btnName==ui->midRSend->objectName()){
+        paratmp1=ui->midRPar1->text().toDouble();
+        paratmp2=ui->midRPar2->text().toDouble();
+        switch (ui->midRMode->currentIndex()) {
+        case 0: style=21;break;
+        case 1: style=22;break;
+        case 2: style=23;break;
+        case 3: style=24;break;
+        }
+    }else if(btnName==ui->outRSend->objectName()){
+        paratmp1=ui->outRPar1->text().toDouble();
+        paratmp2=ui->outRPar2->text().toDouble();
+        switch (ui->outRMode->currentIndex()) {
+        case 0: style=31;break;
+        case 1: style=32;break;
+        case 2: style=33;break;
+        case 3: style=34;break;
+        }
     }
-    data[0]=0xaa;        data[1]=0xa5;
-    data[2]=0x55;        data[3]=0x12;
-    data[4]=0xa0;        data[5]=0xbb;
-    data[6]=0x0d;        data[7]=0x00;
-    data[8]=0x00;        data[9]=0x40;
-    data[10]=0x9c;        data[11]=0x00;
-    data[12]=0x00;        data[13]=0xfa;
-    //write data
-    writeThread.writeData(data);
+
+
+        
+    /*else if(btnName==ui->innRStop->objectName()){
+        datasend[3]=datain.outframe.innstop;        style=16;
+    }else if(btnName==ui->midRStop->objectName()){
+        datasend[3]=datain.outframe.midstop;        style=26;
+    }else if(btnName==ui->outRStop->objectName()){
+        datasend[3]=datain.outframe.outstop;        style=36;
+    }else if(btnName==ui->innREnable->objectName()){
+        datasend[3]=datain.outframe.innenable;      style=15;
+    }else if(btnName==ui->midREnable->objectName()){
+        datasend[3]=datain.outframe.midenable;      style=25;
+    }else if(btnName==ui->outREnable->objectName()){
+        datasend[3]=datain.outframe.outenable;      style=35;
+    }*/
+
+    // 如果style的最后一位小于5，则为设置参数1，2，低字节在前
+    //发送数据
+    writeThread.writeData(datain.rotSend(style,paratmp1,paratmp2));
 }
 
 void MainWindow::SetReadState(bool isOpen){
@@ -189,29 +230,11 @@ void MainWindow::SetButton(){
 }
 void MainWindow::shakehand(){
     //发送握手信号
-    QByteArray data;
-    data.append(0x55);
-    data.append(0xaa);
-    data.append(0x06);
-    data.append(0x80);
-    data.append(0x02);
-    data.append(0x82);
-    //write data
-    readThread.writeData(data);
+    writeThread.writeData(datain.imushakehand);
 }
 void MainWindow::shakehand2(){
     //发送握手信号
-    QByteArray data;
-    data.resize(14);
-    data[0]=0xaa;        data[1]=0xa5;
-    data[2]=0x55;        data[3]=0x0f;
-    data[4]=0x00;        data[5]=0x00;
-    data[6]=0x00;        data[7]=0x00;
-    data[8]=0x00;        data[9]=0x00;
-    data[10]=0x00;        data[11]=0x00;
-    data[12]=0x00;        data[13]=0xb3;
-    //write data
-    writeThread.writeData(data);
+    writeThread.writeData(datain.rotshakehand);
 }
 
 void MainWindow::recieve(const QByteArray &data){

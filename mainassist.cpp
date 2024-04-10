@@ -16,6 +16,33 @@ void Data::init(){
     this->rot1sNum=0;
     this->inframe={0xfa,0x69,32,0x72,32,0xee};
 
+    this->outframe.len=14;
+    this->outframe.start1=0xaa;
+    this->outframe.start2=0xa5;
+    this->outframe.start3=0x55;
+    this->outframe.innpos=0x11;     this->outframe.midpos=0x21;     this->outframe.outpos=0x31;
+    this->outframe.innrelapos=0x12; this->outframe.midrelapos=0x22; this->outframe.outrelapos=0x32;
+    this->outframe.innv=0x13;       this->outframe.midv=0x23;       this->outframe.outv=0x33;
+    this->outframe.innsway=0x1a;    this->outframe.midsway=0x2a;    this->outframe.outsway=0x3a;
+    this->outframe.innenable=0x1e;  this->outframe.midenable=0x2e;  this->outframe.outenable=0x3e;
+    this->outframe.innstop=0x1f;    this->outframe.midstop=0x2f;    this->outframe.outstop=0x3f;
+    this->outframe.ccwdirect=0x80;  this->outframe.cwdirect=0x00;
+    this->outframe.enable=0x00;this->outframe.disenable=0x80;
+
+    this->imushakehand.resize(6);
+    this->imushakehand[0]=0x55;    this->imushakehand[1]=0xaa;
+    this->imushakehand[2]=0x06;    this->imushakehand[3]=0x80;
+    this->imushakehand[4]=0x02;    this->imushakehand[5]=0x82;
+
+    this->rotshakehand.resize(14);
+    this->rotshakehand[0]=0xaa;     this->rotshakehand[1]=0xa5;
+    this->rotshakehand[2]=0x55;     this->rotshakehand[3]=0x0f;
+    this->rotshakehand[4]=0x00;     this->rotshakehand[5]=0x00;
+    this->rotshakehand[6]=0x00;     this->rotshakehand[7]=0x00;
+    this->rotshakehand[8]=0x00;     this->rotshakehand[9]=0x00;
+    this->rotshakehand[10]=0x00;    this->rotshakehand[11]=0x00;
+    this->rotshakehand[12]=0x00;    this->rotshakehand[13]=0xb3;
+
     // 对准数据
     this->alignnum=0;
     //this->alignData.resize(0,0);
@@ -109,7 +136,126 @@ QString Data::RotToString(){
     return str;
 }
 
-
+QByteArray Data::rotSend(uint type,double data1,double data2){
+    QByteArray data;
+    data.resize(this->outframe.len);
+    data.fill(0);
+    QDataStream out(&data,QIODevice::WriteOnly);
+    out.setByteOrder(QDataStream::ByteOrder::LittleEndian);
+    out<<this->outframe.start1<<this->outframe.start2<<this->outframe.start3;
+    this->outframe.para1=qRound(qAbs(data1*10000));
+    this->outframe.para2=qRound(qAbs(data2*10000));
+    switch (type) {
+        case 11:
+            out<<this->outframe.innpos<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 12:
+            out<<this->outframe.innrelapos<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 13:
+            out<<this->outframe.innv<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 14:
+            out<<this->outframe.innsway<<this->outframe.para1;
+            out<<this->outframe.cwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 15:
+            out<<this->outframe.innenable<<this->outframe.para1;
+            if(data1==0) out<<this->outframe.disenable;
+            else out<<this->outframe.enable;
+            out<<this->outframe.para2;
+            break;
+        case 16:
+            out<<this->outframe.innstop<<this->outframe.para1;
+            out<<this->outframe.disenable;
+            out<<this->outframe.para2;
+            break;
+        case 21:
+            out<<this->outframe.midpos<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 22:
+            out<<this->outframe.midrelapos<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 23:
+            out<<this->outframe.midv<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 24:
+            out<<this->outframe.midsway<<this->outframe.para1;
+            out<<this->outframe.cwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 25:
+            out<<this->outframe.midenable<<this->outframe.para1;
+            if(data1==0) out<<this->outframe.disenable;
+            else out<<this->outframe.enable;
+            out<<this->outframe.para2;
+            break;
+        case 26:
+            out<<this->outframe.midstop<<this->outframe.para1;
+            out<<this->outframe.disenable;
+            out<<this->outframe.para2;
+            break;
+        case 31:
+            out<<this->outframe.outpos<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 32:
+            out<<this->outframe.outrelapos<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;  
+        case 33:
+            out<<this->outframe.outv<<this->outframe.para1;
+            if (data1<=0) out<<this->outframe.cwdirect;
+            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 34:
+            out<<this->outframe.outsway<<this->outframe.para1;
+            out<<this->outframe.cwdirect;
+            out<<this->outframe.para2;
+            break;
+        case 35:
+            out<<this->outframe.outenable<<this->outframe.para1;
+            if(data1==0) out<<this->outframe.disenable;
+            else out<<this->outframe.enable;
+            out<<this->outframe.para2;
+            break;
+        case 36:
+            out<<this->outframe.outstop<<this->outframe.para1;
+            out<<this->outframe.disenable;
+            out<<this->outframe.para2;
+            break;
+    }
+    // 和校验
+    data[data.size()-1]=0;
+    for(int i=0;i<data.size()-1;i++){
+        data[data.size()-1]+=data[i];
+    }
+    return data;
+}
 
 void Plot::init(){
     // 图标初始化
