@@ -5,6 +5,7 @@
 #include <Eigen/Geometry>
 #include <iostream>
 #include <QLCDNumber>
+#include <QStandardItemModel>
 
 #include "portthread.h"
 #include "INS.h"
@@ -47,6 +48,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->outRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
     connect(ui->midRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
     connect(ui->innRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
+
+    connect(ui->autoTestButton,&QPushButton::clicked,this,&MainWindow::startCommands);
+    connect(ui->ReadSettingButton,&QPushButton::clicked,this,&MainWindow::ReadSettings);
+    connect(&timer,&QTimer::timeout,this,&MainWindow::excuteCommand);
+
 }
 
 MainWindow::~MainWindow()
@@ -55,6 +61,7 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::Init(){
+    ReadSettings();
     //ind_resolve={};
     dataTemp.clear();
     lostDataNum=0;
@@ -88,6 +95,102 @@ void MainWindow::Init(){
     ui->lcdtime->setDigitCount(10);
 }
 
+void MainWindow::ReadSettings(){
+    //逐行读取本文件夹下的设置文件settings.ini,并保存到commands中
+    QFile file("settings.ini");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, tr("Error"), tr("Can't open settings.ini"));
+        return;
+    }
+    commands.clear();
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        // 读取一行,并按空格分割,保存为数字
+        QString line = in.readLine();
+        QStringList list = line.split(QRegularExpression("\\s+"));
+        if (list.size() != 6) {
+            QMessageBox::warning(this, tr("Error"), tr("settings.ini format error"));
+            return;
+        }
+        Command command;
+        command.index = list[0].toUInt();
+        command.axis = list[1].toUInt();
+        command.type = list[2].toUInt();
+        command.para1 = list[3].toDouble();
+        command.para2 = list[4].toDouble();
+        command.time = list[5].toDouble();
+        commands.append(command);
+    }
+    file.close();
+    // 显示命令
+    displayCommandsInTable();
+}
+
+void MainWindow::displayCommandsInTable() {
+    // 创建一个新的QStandardItemModel
+    QStandardItemModel *model = new QStandardItemModel();
+
+    // 设置表头
+    model->setHorizontalHeaderLabels(QStringList() << "序号" << "轴" << "类型" << "参数1" << "参数2" << "时间");
+
+    // 将commands添加到模型中
+    for (const Command &command : commands) {
+        QList<QStandardItem *> items;
+        items.append(new QStandardItem(QString::number(command.index)));
+        items.append(new QStandardItem(QString::number(command.axis)));
+        items.append(new QStandardItem(QString::number(command.type)));
+        items.append(new QStandardItem(QString::number(command.para1)));
+        items.append(new QStandardItem(QString::number(command.para2)));
+        items.append(new QStandardItem(QString::number(command.time)));
+        model->appendRow(items);
+    }
+
+    // 将模型设置为QTableView的模型
+    ui->tableView->setModel(model);
+
+    // 设置列名不可见
+    ui->tableView->verticalHeader()->setVisible(false);
+
+    // 设置表头列宽占满整个视图
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
+
+    // 设置表头不可拖动
+    ui->tableView->horizontalHeader()->setSectionsMovable(false);
+    // 设置表头不可点击
+    ui->tableView->horizontalHeader()->setSectionsClickable(false);
+}
+
+void MainWindow::startCommands(){
+    //如果还未开始执行命令，初始化命令序号
+    //如果已经开始执行命令，停止定时器
+    if(timer.isActive()){
+        timer.stop();
+        ui->autoTestButton->setText("自动测试");
+        return;
+    }
+    commandIndex=0;
+    rotInit();
+    if(Saving){
+        StartWork();
+    }
+    StartWork();
+    ui->autoTestButton->setText("准备中");
+    timer.start(150*1000);//对准
+    //excuteCommand();
+}
+void MainWindow::excuteCommand(){
+    //执行命令
+    Command command=commands[commandIndex];
+    uint style=command.axis*10+command.type;
+    writeThread.writeData(datain.rotSend(style,command.para1,command.para2));
+
+    // 按钮在原有文字后增加commandindex
+    ui->autoTestButton->setText("执行命令"+QString::number(commandIndex));
+    //重置定时器    
+    timer.start(command.time*1000);
+    commandIndex=(commandIndex+1)%commands.size();
+}
+
 void MainWindow::ReadPort(){
     //如果没连接成果，则刷新端口
     if(!P_Read_Con){
@@ -118,7 +221,6 @@ void MainWindow::SetPortRead(){
         }else{
             readThread.closeSerialPort();
         }
-
     }else{
         QMessageBox::warning(this,tr("error"),"频率格式错误");
     }
@@ -143,8 +245,8 @@ void MainWindow::RotSet(){
     uint style=0;
     double paratmp1=0;
     double paratmp2=0;
-    quint32 para1=0;
-    quint32 para2=0;
+    //quint32 para1=0;
+    //quint32 para2=0;
 
     // 确定4字节状态
     if (btnName==ui->innRSend->objectName()){
@@ -235,6 +337,26 @@ void MainWindow::shakehand(){
 void MainWindow::shakehand2(){
     //发送握手信号
     writeThread.writeData(datain.rotshakehand);
+    //设置转台初始值
+    //rotInit();
+}
+
+void MainWindow::rotInit() {
+    QTimer::singleShot(1000, this, &MainWindow::sendRotData1);
+}
+
+void MainWindow::sendRotData1() {
+    writeThread.writeData(datain.rotSend(11, datain.outframe.inn0, 50));
+    QTimer::singleShot(1000, this, &MainWindow::sendRotData2);
+}
+
+void MainWindow::sendRotData2() {
+    writeThread.writeData(datain.rotSend(21, datain.outframe.mid0, 50));
+    QTimer::singleShot(1000, this, &MainWindow::sendRotData3);
+}
+
+void MainWindow::sendRotData3() {
+    writeThread.writeData(datain.rotSend(31, datain.outframe.out0, 50));
 }
 
 void MainWindow::recieve(const QByteArray &data){
@@ -309,31 +431,6 @@ void MainWindow::recieve(const QByteArray &data){
     }
 }
 
-//imu数据解帧
-void MainWindow::decode(QByteArray datain,int type,Data &dataout){
-    QDataStream in(datain);
-    in.setByteOrder(QDataStream::ByteOrder::LittleEndian);
-
-    //imuFrame imu;
-    //double imusp[7];
-    //double rotsp[4];
-    /*rotFrame rot;
-    switch (type) {
-        case 1:
-            in>>imu.time>>imu.wx>>imu.tx>>imu.wy>>imu.ty>>imu.wz>>imu.tz>>imu.ax1>>imu.ax2>>imu.ay1>>imu.ay2>>imu.az1>>imu.az2;
-            imusp[0]=imu.wx;imusp[1]=imu.wy;imusp[2]=imu.wz;
-            imusp[3]=imu.ax1-imu.ax2;imusp[4]=imu.ay1-imu.ay2;imusp[5]=imu.az1-imu.az2;
-            imusp[6]=imu.time;
-            dataout.updateImu(imusp);
-            break;
-        case 2:
-            in>>rot.time>>rot.inn>>rot.tmp3>>rot.mid>>rot.tmp2>>rot.out>>rot.tmp1;
-            rotsp[0]=rot.inn;rotsp[1]=rot.mid;rotsp[2]=rot.out;
-            rotsp[3]=rot.time;
-            dataout.updateRot(rotsp);
-            break;
-    }*/
-}
 
 void MainWindow::ShowImu(const double imu[7]){
     // add data to the graph

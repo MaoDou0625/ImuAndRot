@@ -26,8 +26,12 @@ void Data::init(){
     this->outframe.innsway=0x1a;    this->outframe.midsway=0x2a;    this->outframe.outsway=0x3a;
     this->outframe.innenable=0x1e;  this->outframe.midenable=0x2e;  this->outframe.outenable=0x3e;
     this->outframe.innstop=0x1f;    this->outframe.midstop=0x2f;    this->outframe.outstop=0x3f;
-    this->outframe.ccwdirect=0x80;  this->outframe.cwdirect=0x00;
+    this->outframe.ccwdirect=0x80;  this->outframe.cwdirect=0x00;   this->outframe.shortdirect=0xa0;
     this->outframe.enable=0x00;this->outframe.disenable=0x80;
+
+    this->outframe.inn0=312.533;
+    this->outframe.mid0=0;
+    this->outframe.out0=70;
 
     this->imushakehand.resize(6);
     this->imushakehand[0]=0x55;    this->imushakehand[1]=0xaa;
@@ -48,6 +52,8 @@ void Data::init(){
     //this->alignData.resize(0,0);
     this->freq1=400;
     this->freq2=100;
+
+
 }
 
 bool Data::updateImu(QByteArray data){
@@ -148,8 +154,9 @@ QByteArray Data::rotSend(uint type,double data1,double data2){
     switch (type) {
         case 11:
             out<<this->outframe.innpos<<this->outframe.para1;
-            if (data1<=0) out<<this->outframe.cwdirect;
-            else out<<this->outframe.ccwdirect;
+            //if (data1<=0) out<<this->outframe.cwdirect;
+            //else out<<this->outframe.ccwdirect;
+            out<<this->outframe.shortdirect;
             out<<this->outframe.para2;
             break;
         case 12:
@@ -182,8 +189,7 @@ QByteArray Data::rotSend(uint type,double data1,double data2){
             break;
         case 21:
             out<<this->outframe.midpos<<this->outframe.para1;
-            if (data1<=0) out<<this->outframe.cwdirect;
-            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.shortdirect;
             out<<this->outframe.para2;
             break;
         case 22:
@@ -216,8 +222,7 @@ QByteArray Data::rotSend(uint type,double data1,double data2){
             break;
         case 31:
             out<<this->outframe.outpos<<this->outframe.para1;
-            if (data1<=0) out<<this->outframe.cwdirect;
-            else out<<this->outframe.ccwdirect;
+            out<<this->outframe.shortdirect;
             out<<this->outframe.para2;
             break;
         case 32:

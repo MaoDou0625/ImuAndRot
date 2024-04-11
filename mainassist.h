@@ -94,10 +94,15 @@ public:
         quint32 para2;
         quint8 ccwdirect;
         quint8 cwdirect;
+        quint8 shortdirect;
         quint8 enable;
         quint8 disenable;
 
         quint8 end;
+
+        double inn0;
+        double mid0;
+        double out0;
 
     }outframe;
 

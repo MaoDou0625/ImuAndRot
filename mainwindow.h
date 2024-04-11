@@ -8,6 +8,8 @@
 #include <QFile>
 #include <QtCharts>
 #include <Eigen/Eigen>
+#include <QTimer>
+#include <QSettings>
 #include "portthread.h"
 #include "navigation.h"
 #include "mainassist.h"
@@ -42,6 +44,10 @@ private:
     bool Naving;
 
     void Init();//初始化
+    void ReadSettings();//读取设置
+    void displayCommandsInTable();
+    void startCommands();
+    void excuteCommand();//发送命令
     void ReadPort();//读取串口
     void SetPortRead();//设置读取串口
     void SetPortWrite();//设置输出串口
@@ -50,9 +56,13 @@ private:
     void SetButton();
     void StartWork();
     void recieve(const QByteArray &s);//接受数据，解帧
-    void decode(QByteArray datain,int type,Data &dataout);//解帧，无用
+    //void decode(QByteArray datain,int type,Data &dataout);//解帧，无用
     void shakehand();//发送握手协议（100惯导用）
     void shakehand2();//发送握手协议（小三轴转台用）
+    void rotInit();
+    void sendRotData1();
+    void sendRotData2();
+    void sendRotData3();
     void sendPort();
     void ShowErrot(const QString &s);//无用
     void ShowImu(const double imu[7]);//展示数据
@@ -87,6 +97,21 @@ private:
         int ymax=10;
         QLineSeries* data=new QLineSeries();
     };
+
+    struct Command{
+        uint index;
+        uint axis;
+        uint type;
+        double para1;
+        double para2;
+        double time;
+    };
+
+    QVector<Command> commands;
+    uint commandIndex=0;
+    QTimer timer;
+
+
     QValueAxis* xaxis1=new QValueAxis();
     QValueAxis* xaxis2=new QValueAxis();
     int xmin=0;
