@@ -269,7 +269,8 @@ void Plot::init(){
     this->xaxis=new QValueAxis();
     // 坐标轴范围
     this->xmin=0;
-    this->xmax=60;
+    this->xlen=10;
+    this->xmax=this->xmin+this->xlen;
     // 坐标设置
     this->xaxis->setMin(this->xmin);
     this->xaxis->setMax(this->xmax);
@@ -309,7 +310,6 @@ void Plot::addLine(QString name,QColor color,double ymin,double ymax){
     // 曲线最大值列表增加一个
     this->ymax.append(ymax);
 
-    // 坐标设置
     this->yaxis[this->num-1]->setMin(this->ymin[this->num-1]);
     this->yaxis[this->num-1]->setMax(this->ymax[this->num-1]);
     this->yaxis[this->num-1]->setLabelFormat("%.1f");
@@ -363,6 +363,11 @@ void Plot::updateLine(int index,double x,double y){
         this->ymax[index]=y+0.1*abs(y);
         this->yaxis[index]->setMin(this->ymin[index]);
         this->yaxis[index]->setMax(this->ymax[index]);
+
+        this->xmin=floor(x/this->xlen)*this->xlen;
+        this->xmax=this->xmin+this->xlen;
+        this->xaxis->setMin(this->xmin);
+        this->xaxis->setMax(this->xmax);
     }
     // 如果数据超出范围，重新设置坐标轴范围
     if(y>this->ymax[index]){
@@ -375,10 +380,14 @@ void Plot::updateLine(int index,double x,double y){
     }
     // 如果时间超出范围，重新设置坐标轴范围
     if(x>this->xmax){
-        this->xmin=floor(x/xmax)*xmax;
-        this->xmax=this->xmin+60;
-        this->xaxis->setMin(this->xmin);
-        this->xaxis->setMax(this->xmax);
-        this->line[index]->clear();
+        //this->xmin==floor(x/xmax)*xmax;
+        this->xmax=this->xmax+this->xlen;
+        //this->xaxis->setMin(this->xmin);
+        // 如果此时没有处于缩放状态，设置横坐标轴范围
+        if(this->xaxis->min()==this->xmin){
+            this->xaxis->setMax(this->xmax);
+        }
+        //this->xaxis->setMax(this->xmax);
+        //this->line[index]->clear();
     }
 }

@@ -10,6 +10,9 @@
 #include <Eigen/Eigen>
 #include <QTimer>
 #include <QSettings>
+#include <QtCharts/QChartView>
+#include <QMouseEvent>
+
 #include "portthread.h"
 #include "navigation.h"
 #include "mainassist.h"
@@ -67,6 +70,7 @@ private:
     void ShowErrot(const QString &s);//无用
     void ShowImu(const double imu[7]);//展示数据
     void ShowRot(const double rot[4]);//展示数据
+    void ShowReset();
     void ShowNav(const VectorXd avp);//展示数据
 
     void StartNav();//开始导航
@@ -143,6 +147,21 @@ private:
     Navigation navthread;
 };
 
+class CustomChartView : public QChartView {
+public:
+    CustomChartView(QChart *chart, QWidget *parent = nullptr) : QChartView(chart, parent) {}
+
+protected:
+    void mouseDoubleClickEvent(QMouseEvent *event) override {
+        if (event->button() == Qt::RightButton) {
+            // 当右键双击时，取消缩放
+            chart()->zoomReset();
+        } else {
+            // 否则，执行默认的双击事件
+            QChartView::mouseDoubleClickEvent(event);
+        }
+    }
+};
 
 
 #endif // MAINWINDOW_H

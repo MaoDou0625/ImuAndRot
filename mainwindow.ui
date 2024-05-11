@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>678</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -423,7 +423,7 @@
             <item row="0" column="1">
              <widget class="QTabWidget" name="tabWidget_2">
               <property name="cursor">
-               <cursorShape>ForbiddenCursor</cursorShape>
+               <cursorShape>ArrowCursor</cursorShape>
               </property>
               <property name="currentIndex">
                <number>1</number>
@@ -834,7 +834,26 @@
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout">
                 <item>
-                 <widget class="QChartView" name="groShow"/>
+                 <widget class="QChartView" name="groShow">
+                  <property name="cursor" stdset="0">
+                   <cursorShape>ArrowCursor</cursorShape>
+                  </property>
+                  <property name="mouseTracking">
+                   <bool>true</bool>
+                  </property>
+                  <property name="verticalScrollBarPolicy">
+                   <enum>Qt::ScrollBarAsNeeded</enum>
+                  </property>
+                  <property name="horizontalScrollBarPolicy">
+                   <enum>Qt::ScrollBarAsNeeded</enum>
+                  </property>
+                  <property name="sizeAdjustPolicy">
+                   <enum>QAbstractScrollArea::AdjustToContents</enum>
+                  </property>
+                  <property name="dragMode">
+                   <enum>QGraphicsView::ScrollHandDrag</enum>
+                  </property>
+                 </widget>
                 </item>
                 <item>
                  <widget class="QChartView" name="accShow"/>
@@ -924,12 +943,16 @@
                     </widget>
                    </item>
                    <item row="2" column="1">
-                    <widget class="QLineEdit" name="innRPar2"/>
+                    <widget class="QLineEdit" name="innRPar2">
+                     <property name="text">
+                      <string>50</string>
+                     </property>
+                    </widget>
                    </item>
                    <item row="1" column="1">
                     <widget class="QLineEdit" name="innRPar1">
                      <property name="text">
-                      <string/>
+                      <string>312.533</string>
                      </property>
                     </widget>
                    </item>
@@ -1072,12 +1095,16 @@
                    <item row="1" column="1">
                     <widget class="QLineEdit" name="midRPar1">
                      <property name="text">
-                      <string/>
+                      <string>0</string>
                      </property>
                     </widget>
                    </item>
                    <item row="2" column="1">
-                    <widget class="QLineEdit" name="midRPar2"/>
+                    <widget class="QLineEdit" name="midRPar2">
+                     <property name="text">
+                      <string>50</string>
+                     </property>
+                    </widget>
                    </item>
                    <item row="3" column="1">
                     <widget class="QPushButton" name="midRSend">
@@ -1122,7 +1149,7 @@
                    <item row="1" column="1">
                     <widget class="QLineEdit" name="outRPar1">
                      <property name="text">
-                      <string/>
+                      <string>70</string>
                      </property>
                     </widget>
                    </item>
@@ -1196,7 +1223,11 @@
                     </widget>
                    </item>
                    <item row="2" column="1">
-                    <widget class="QLineEdit" name="outRPar2"/>
+                    <widget class="QLineEdit" name="outRPar2">
+                     <property name="text">
+                      <string>50</string>
+                     </property>
+                    </widget>
                    </item>
                    <item row="3" column="1">
                     <widget class="QPushButton" name="outRSend">
@@ -1280,8 +1311,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>579</width>
-               <height>527</height>
+               <width>505</width>
+               <height>587</height>
               </rect>
              </property>
              <layout class="QFormLayout" name="formLayout">

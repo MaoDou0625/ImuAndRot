@@ -53,6 +53,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->ReadSettingButton,&QPushButton::clicked,this,&MainWindow::ReadSettings);
     connect(&timer,&QTimer::timeout,this,&MainWindow::excuteCommand);
 
+    connect(ui->tabWidget_2,&QTabWidget::tabBarDoubleClicked,this,&MainWindow::ShowReset);
+    // 右键双击图表取消缩放状态
 }
 
 MainWindow::~MainWindow()
@@ -82,6 +84,10 @@ void MainWindow::Init(){
     //图表显示初始化
     ui->groShow->setChart(groPlot.Chart);
     ui->accShow->setChart(accPlot.Chart);
+
+    // 设置橡皮筋选择模式
+    ui->groShow->setRubberBand(QChartView::RectangleRubberBand);
+    ui->accShow->setRubberBand(QChartView::RectangleRubberBand);
 
     //lcd初始化
     ui->lcdfogx->setDigitCount(10);
@@ -166,6 +172,9 @@ void MainWindow::startCommands(){
     if(timer.isActive()){
         timer.stop();
         ui->autoTestButton->setText("自动测试");
+        if(Saving){
+            StartWork();
+        }
         return;
     }
     commandIndex=0;
@@ -453,10 +462,16 @@ void MainWindow::ShowImu(const double imu[7]){
 
 }
 void MainWindow::ShowRot(const double rot[4]){
-    ui->lcdrotx->display(rot[0]);
-    ui->lcdrotz->display(rot[1]);
+    ui->lcdrotx->display(rot[1]);
+    ui->lcdrotz->display(rot[2]);
     ui->lcdtime->display(rot[3]);
 }
+
+void MainWindow::ShowReset(){
+    groPlot.Chart->zoomReset();
+    accPlot.Chart->zoomReset();
+}
+
 void MainWindow::ShowNav(const VectorXd avp){
     VectorXd avp0(10);
     avp0<<glv.att0,glv.vn0,glv.pos0,0;

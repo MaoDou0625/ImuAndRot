@@ -13,6 +13,9 @@ public:
     QChart* Chart;
     //横坐标轴
     QValueAxis* xaxis;
+
+    double xlen;
+
     //横坐标轴最小值
     double xmin;
     //横坐标轴最大值
