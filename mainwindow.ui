@@ -876,12 +876,12 @@
          <attribute name="title">
           <string>转台控制</string>
          </attribute>
-         <layout class="QFormLayout" name="formLayout_13">
-          <item row="0" column="0">
-           <layout class="QFormLayout" name="formLayout_12">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <layout class="QFormLayout" name="formLayout_10">
             <item row="0" column="0">
-             <layout class="QFormLayout" name="formLayout_11">
-              <item row="0" column="0">
+             <layout class="QVBoxLayout" name="verticalLayout_3">
+              <item>
                <widget class="QGroupBox" name="groupBox_8">
                 <property name="font">
                  <font>
@@ -1007,7 +1007,7 @@
                 </layout>
                </widget>
               </item>
-              <item row="1" column="0">
+              <item>
                <widget class="QGroupBox" name="groupBox_7">
                 <property name="font">
                  <font>
@@ -1023,18 +1023,15 @@
                 <layout class="QFormLayout" name="formLayout_5">
                  <item row="0" column="0" colspan="2">
                   <layout class="QGridLayout" name="gridLayout_8">
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="labelWriteName_3">
+                   <item row="3" column="1">
+                    <widget class="QPushButton" name="midRSend">
                      <property name="font">
                       <font>
                        <pointsize>11</pointsize>
                       </font>
                      </property>
                      <property name="text">
-                      <string>模式</string>
-                     </property>
-                     <property name="alignment">
-                      <set>Qt::AlignCenter</set>
+                      <string>运行</string>
                      </property>
                     </widget>
                    </item>
@@ -1062,8 +1059,8 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="labelWriteBaud_4">
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="labelWriteBaud_5">
                      <property name="font">
                       <font>
                        <pointsize>11</pointsize>
@@ -1077,8 +1074,22 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="0">
-                    <widget class="QLabel" name="labelWriteBaud_5">
+                   <item row="2" column="1">
+                    <widget class="QLineEdit" name="midRPar2">
+                     <property name="text">
+                      <string>50</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QCheckBox" name="midcheckBox">
+                     <property name="text">
+                      <string>使能</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="labelWriteBaud_4">
                      <property name="font">
                       <font>
                        <pointsize>11</pointsize>
@@ -1099,29 +1110,18 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
-                    <widget class="QLineEdit" name="midRPar2">
-                     <property name="text">
-                      <string>50</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="1">
-                    <widget class="QPushButton" name="midRSend">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="labelWriteName_3">
                      <property name="font">
                       <font>
                        <pointsize>11</pointsize>
                       </font>
                      </property>
                      <property name="text">
-                      <string>运行</string>
+                      <string>模式</string>
                      </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="0">
-                    <widget class="QCheckBox" name="midcheckBox">
-                     <property name="text">
-                      <string>使能</string>
+                     <property name="alignment">
+                      <set>Qt::AlignCenter</set>
                      </property>
                     </widget>
                    </item>
@@ -1130,7 +1130,7 @@
                 </layout>
                </widget>
               </item>
-              <item row="2" column="0">
+              <item>
                <widget class="QGroupBox" name="groupBox_6">
                 <property name="font">
                  <font>
@@ -1253,111 +1253,95 @@
                 </layout>
                </widget>
               </item>
-              <item row="5" column="0">
-               <layout class="QFormLayout" name="formLayout_10">
-                <item row="1" column="0">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout">
+                <item>
                  <widget class="QPushButton" name="autoTestButton">
                   <property name="text">
                    <string>自动化测试</string>
                   </property>
                  </widget>
                 </item>
-                <item row="1" column="1">
+                <item>
                  <widget class="QPushButton" name="ReadSettingButton">
                   <property name="text">
                    <string>读取设置文件</string>
                   </property>
                  </widget>
                 </item>
+                <item>
+                 <widget class="QSpinBox" name="atuoTestTurn">
+                  <property name="minimum">
+                   <number>-1</number>
+                  </property>
+                  <property name="maximum">
+                   <number>1000000000</number>
+                  </property>
+                 </widget>
+                </item>
                </layout>
-              </item>
-              <item row="3" column="0">
-               <spacer name="verticalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="4" column="0">
-               <spacer name="verticalSpacer_3">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
               </item>
              </layout>
             </item>
+            <item row="0" column="1">
+             <widget class="QScrollArea" name="scrollArea">
+              <property name="widgetResizable">
+               <bool>true</bool>
+              </property>
+              <widget class="QWidget" name="scrollAreaWidgetContents">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>0</y>
+                 <width>474</width>
+                 <height>585</height>
+                </rect>
+               </property>
+               <layout class="QFormLayout" name="formLayout">
+                <item row="0" column="1">
+                 <widget class="QTabWidget" name="tabWidget_3">
+                  <property name="cursor">
+                   <cursorShape>ArrowCursor</cursorShape>
+                  </property>
+                  <property name="mouseTracking">
+                   <bool>true</bool>
+                  </property>
+                  <property name="tabletTracking">
+                   <bool>true</bool>
+                  </property>
+                  <property name="currentIndex">
+                   <number>0</number>
+                  </property>
+                  <widget class="QWidget" name="tab_2">
+                   <attribute name="title">
+                    <string>数据显示</string>
+                   </attribute>
+                   <layout class="QFormLayout" name="formLayout_9">
+                    <item row="0" column="1">
+                     <widget class="QTableView" name="tableView"/>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="tab_4">
+                   <attribute name="title">
+                    <string>数据绘图</string>
+                   </attribute>
+                   <layout class="QGridLayout" name="gridLayout_11">
+                    <item row="0" column="0">
+                     <widget class="QChartView" name="groShow_2"/>
+                    </item>
+                    <item row="1" column="0">
+                     <widget class="QChartView" name="accShow_2"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
            </layout>
-          </item>
-          <item row="0" column="1">
-           <widget class="QScrollArea" name="scrollArea">
-            <property name="widgetResizable">
-             <bool>true</bool>
-            </property>
-            <widget class="QWidget" name="scrollAreaWidgetContents">
-             <property name="geometry">
-              <rect>
-               <x>0</x>
-               <y>0</y>
-               <width>505</width>
-               <height>587</height>
-              </rect>
-             </property>
-             <layout class="QFormLayout" name="formLayout">
-              <item row="0" column="1">
-               <widget class="QTabWidget" name="tabWidget_3">
-                <property name="cursor">
-                 <cursorShape>ArrowCursor</cursorShape>
-                </property>
-                <property name="mouseTracking">
-                 <bool>true</bool>
-                </property>
-                <property name="tabletTracking">
-                 <bool>true</bool>
-                </property>
-                <property name="currentIndex">
-                 <number>0</number>
-                </property>
-                <widget class="QWidget" name="tab_2">
-                 <attribute name="title">
-                  <string>数据显示</string>
-                 </attribute>
-                 <layout class="QFormLayout" name="formLayout_9">
-                  <item row="0" column="1">
-                   <widget class="QTableView" name="tableView"/>
-                  </item>
-                 </layout>
-                </widget>
-                <widget class="QWidget" name="tab_4">
-                 <attribute name="title">
-                  <string>数据绘图</string>
-                 </attribute>
-                 <layout class="QGridLayout" name="gridLayout_11">
-                  <item row="0" column="0">
-                   <widget class="QChartView" name="groShow_2"/>
-                  </item>
-                  <item row="1" column="0">
-                   <widget class="QChartView" name="accShow_2"/>
-                  </item>
-                 </layout>
-                </widget>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </widget>
           </item>
          </layout>
         </widget>

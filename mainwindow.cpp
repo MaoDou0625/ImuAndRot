@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->autoTestButton,&QPushButton::clicked,this,&MainWindow::startCommands);
     connect(ui->ReadSettingButton,&QPushButton::clicked,this,&MainWindow::ReadSettings);
     connect(&timer,&QTimer::timeout,this,&MainWindow::excuteCommand);
+    connect(ui->atuoTestTurn,&QSpinBox::textChanged,this,&MainWindow::setTestTurn);
 
     connect(ui->tabWidget_2,&QTabWidget::tabBarDoubleClicked,this,&MainWindow::ShowReset);
     // 右键双击图表取消缩放状态
@@ -166,6 +167,10 @@ void MainWindow::displayCommandsInTable() {
     ui->tableView->horizontalHeader()->setSectionsClickable(false);
 }
 
+void MainWindow::setTestTurn(){
+    commandMaxTurn=ui->atuoTestTurn->value();
+}
+
 void MainWindow::startCommands(){
     //如果还未开始执行命令，初始化命令序号
     //如果已经开始执行命令，停止定时器
@@ -178,6 +183,7 @@ void MainWindow::startCommands(){
         return;
     }
     commandIndex=0;
+    commandTurn=0;
     rotInit();
     if(Saving){
         StartWork();
@@ -188,6 +194,19 @@ void MainWindow::startCommands(){
     //excuteCommand();
 }
 void MainWindow::excuteCommand(){
+    // 检测次数
+    if(commandIndex==0){
+        commandTurn++;
+        if(commandTurn>commandMaxTurn){
+            timer.stop();
+            ui->autoTestButton->setText("自动测试");
+            if(Saving){
+                StartWork();
+            }
+            return;
+        }
+    }
+
     //执行命令
     Command command=commands[commandIndex];
     uint style=command.axis*10+command.type;
@@ -197,6 +216,7 @@ void MainWindow::excuteCommand(){
     ui->autoTestButton->setText("执行命令"+QString::number(commandIndex));
     //重置定时器    
     timer.start(command.time*1000);
+
     commandIndex=(commandIndex+1)%commands.size();
 }
 

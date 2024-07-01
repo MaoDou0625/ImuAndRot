@@ -51,6 +51,7 @@ private:
     void displayCommandsInTable();
     void startCommands();
     void excuteCommand();//发送命令
+    void setTestTurn();
     void ReadPort();//读取串口
     void SetPortRead();//设置读取串口
     void SetPortWrite();//设置输出串口
@@ -113,6 +114,8 @@ private:
 
     QVector<Command> commands;
     uint commandIndex=0;
+    uint commandTurn=0;
+    int commandMaxTurn=-1;
     QTimer timer;
 
 
