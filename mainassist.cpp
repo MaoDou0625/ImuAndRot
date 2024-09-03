@@ -14,7 +14,11 @@ void Data::init(){
     //imu1sNum,rot1sNum清零
     this->imu1sNum=0;
     this->rot1sNum=0;
-    this->inframe={0xfa,0x69,32,0x72,32,0xee};
+    this->imut=0;
+
+    //this->inframe={0xfa,0x69,32,0x72,32,0xee};
+    this->inframe={0x41,32,0x40,1,1};
+
 
     this->outframe.len=14;
     this->outframe.start1=0xaa;
@@ -29,7 +33,8 @@ void Data::init(){
     this->outframe.ccwdirect=0x80;  this->outframe.cwdirect=0x00;   this->outframe.shortdirect=0xa0;
     this->outframe.enable=0x00;this->outframe.disenable=0x80;
 
-    this->outframe.inn0=312.533;
+    //this->outframe.inn0=312.533;
+    this->outframe.inn0=0;
     this->outframe.mid0=0;
     this->outframe.out0=70;
 
@@ -50,7 +55,7 @@ void Data::init(){
     // 对准数据
     this->alignnum=0;
     //this->alignData.resize(0,0);
-    this->freq1=400;
+    this->freq1=1000;
     this->freq2=100;
 
 
@@ -59,29 +64,37 @@ void Data::init(){
 bool Data::updateImu(QByteArray data){
     //data解帧
     QDataStream in(data);
-    in.setByteOrder(QDataStream::ByteOrder::BigEndian);
-
-    in>>this->imutmp.time>>this->imutmp.wx>>this->imutmp.tx>>\
-    this->imutmp.wy>>this->imutmp.ty>>this->imutmp.wz>>\
-    this->imutmp.tz>>this->imutmp.ax1>>this->imutmp.ax2>>\
-    this->imutmp.ay1>>this->imutmp.ay2>>this->imutmp.az1>>this->imutmp.az2;
-
-    //imu数据更新
-    this->imu[0]=this->imutmp.wx;
-    this->imu[1]=this->imutmp.wy;
-    this->imu[2]=this->imutmp.wz;
-    this->imu[3]=this->imutmp.ax1-this->imutmp.ax2;
-    this->imu[4]=this->imutmp.ay1-this->imutmp.ay2;
-    this->imu[5]=this->imutmp.az1-this->imutmp.az2;
-    this->imu[6]=this->imutmp.time*0.0001;
+    // 设置数据为高字节在前还是低字节在前
+    if(this->inframe.ifBigendian)
+        in.setByteOrder(QDataStream::ByteOrder::BigEndian);
+    else
+        in.setByteOrder(QDataStream::ByteOrder::LittleEndian);
+    
+    if(this->inframe.typenum==1){
+        //如果只有imu数据，则为120大转台，进行如下数据处理
+        in>>this->imutmp.wx>>this->imutmp.tx>>\
+            this->imutmp.wy>>this->imutmp.ty>>this->imutmp.wz>>\
+            this->imutmp.tz>>this->imutmp.ax1>>this->imutmp.ay1>>\
+            this->imutmp.az1;
+        //imu数据更新
+        this->imu[0]=this->imutmp.wx;
+        this->imu[1]=this->imutmp.wy;
+        this->imu[2]=this->imutmp.wz;
+        this->imu[3]=this->imutmp.ax1;
+        this->imu[4]=this->imutmp.ay1;
+        this->imu[5]=this->imutmp.az1;
+        // imu[6]为时间，暂时不用
+        this->imu[6]=this->imut;
+        this->imut=this->imut+1.0/freq1;
+    }
 
     //imu1s数据更新
-    this->imu1s[0]+=this->imu[0];
-    this->imu1s[1]+=this->imu[1];
-    this->imu1s[2]+=this->imu[2];
-    this->imu1s[3]+=this->imu[3];
-    this->imu1s[4]+=this->imu[4];
-    this->imu1s[5]+=this->imu[5];
+    this->imu1s[0]+=this->imu[0]/110080.8133;
+    this->imu1s[1]+=this->imu[1]/110110.1764;
+    this->imu1s[2]+=this->imu[2]/110239.6045;
+    this->imu1s[3]+=this->imu[3]/49294401.24;
+    this->imu1s[4]+=this->imu[4]/46839837.47;
+    this->imu1s[5]+=this->imu[5]/46264865.55;
     this->imu1s[6]=this->imu[6];
     this->imu1sNum++;
 
@@ -89,7 +102,11 @@ bool Data::updateImu(QByteArray data){
     if(this->imu1sNum>=this->freq1){
         this->imu1sNum=0;
         emit sendImu(this->imu1s);
-        this->init();
+        memset(this->imu1s,0,sizeof(this->imu1s));
+        memset(this->rot1s,0,sizeof(this->rot1s));
+        //imu1sNum,rot1sNum清零
+        this->imu1sNum=0;
+        this->rot1sNum=0;
         return true;
     }else {
         return false;

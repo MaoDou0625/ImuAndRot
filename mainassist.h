@@ -59,13 +59,16 @@ public:
     //数据帧格式
     struct inDataFrame{
         uint start;//帧头
-        uint type1;//分类1
+        //uint type1;//分类1
         uint lens1;//帧长1
-        uint type2;//分类2
-        uint lens2;//帧长2
+        //uint type2;//分类2
+        // uint lens2;//帧长2
         uint end;//帧尾
+        uint typenum;
+        bool ifBigendian;//数据是否为高字节在前
     }inframe;
 
+    // 输出给转台的数据格式
     struct outDataFrame{
         uint len;
         quint8 start1;
@@ -110,19 +113,16 @@ public:
     }outframe;
 
     struct imuFrame{
-        quint32 time;
+        //uint32 time;
         qint32 wx;
-        quint16 tx;
+        qint16 tx;
         qint32 wy;
-        quint16 ty;
+        qint16 ty;
         qint32 wz;
-        quint16 tz;
-        quint8 ax1;
-        quint8 ax2;
-        quint8 ay1;
-        quint8 ay2;
-        quint8 az1;
-        quint8 az2;
+        qint16 tz;
+        qint32 ax1;
+        qint32 ay1;
+        qint32 az1;
     }imutmp;
 
     struct rotFrame{
@@ -146,6 +146,9 @@ public:
     double imu1s[7]; double rot1s[4];
     // 累加次数
     uint imu1sNum=0; uint rot1sNum=0;
+
+    //时间
+    double imut=0;
 
     // 频率
     uint freq1;uint freq2;

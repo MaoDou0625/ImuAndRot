@@ -77,6 +77,7 @@ private:
     void StartNav();//开始导航
 
     void RotSet();//发送转台命令
+    void RotEnable();//发送转台使能
 
     QSerialPortInfo portInfo;//串口信息
     PortThread readThread;//读取串口

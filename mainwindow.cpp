@@ -49,6 +49,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->midRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
     connect(ui->innRSend,&QPushButton::clicked,this,&MainWindow::RotSet);
 
+    connect(ui->inncheckBox,&QCheckBox::clicked,this,&MainWindow::RotEnable);
+    connect(ui->midcheckBox,&QCheckBox::clicked,this,&MainWindow::RotEnable);
+    connect(ui->outcheckBox,&QCheckBox::clicked,this,&MainWindow::RotEnable);
+
+
     connect(ui->autoTestButton,&QPushButton::clicked,this,&MainWindow::startCommands);
     connect(ui->ReadSettingButton,&QPushButton::clicked,this,&MainWindow::ReadSettings);
     connect(&timer,&QTimer::timeout,this,&MainWindow::excuteCommand);
@@ -133,6 +138,7 @@ void MainWindow::ReadSettings(){
     displayCommandsInTable();
 }
 
+// 展示转台命令列表
 void MainWindow::displayCommandsInTable() {
     // 创建一个新的QStandardItemModel
     QStandardItemModel *model = new QStandardItemModel();
@@ -171,6 +177,7 @@ void MainWindow::setTestTurn(){
     commandMaxTurn=ui->atuoTestTurn->value();
 }
 
+// 开始自动测试
 void MainWindow::startCommands(){
     //如果还未开始执行命令，初始化命令序号
     //如果已经开始执行命令，停止定时器
@@ -220,6 +227,7 @@ void MainWindow::excuteCommand(){
     commandIndex=(commandIndex+1)%commands.size();
 }
 
+// 显示串口名称
 void MainWindow::ReadPort(){
     //如果没连接成果，则刷新端口
     if(!P_Read_Con){
@@ -246,6 +254,8 @@ void MainWindow::SetPortRead(){
             readThread.setPortName(ui->comReadName->currentText());
             readThread.setBaudRate(ui->comReadBaud->currentText().toInt());
             readThread.setReadFrequency(waitTime);
+            // 120惯导为偶校验
+            readThread.setParity(QSerialPort::EvenParity);
             readThread.openSerialPort();
         }else{
             readThread.closeSerialPort();
@@ -286,6 +296,7 @@ void MainWindow::RotSet(){
         case 1: style=12;break;
         case 2: style=13;break;
         case 3: style=14;break;
+        case 4: style=16;break;
         }
     }else if(btnName==ui->midRSend->objectName()){
         paratmp1=ui->midRPar1->text().toDouble();
@@ -295,6 +306,7 @@ void MainWindow::RotSet(){
         case 1: style=22;break;
         case 2: style=23;break;
         case 3: style=24;break;
+        case 4: style=26;break;
         }
     }else if(btnName==ui->outRSend->objectName()){
         paratmp1=ui->outRPar1->text().toDouble();
@@ -304,26 +316,61 @@ void MainWindow::RotSet(){
         case 1: style=32;break;
         case 2: style=33;break;
         case 3: style=34;break;
+        case 4: style=36;break;
         }
     }
+    //发送数据
+    writeThread.writeData(datain.rotSend(style,paratmp1,paratmp2));
+}
 
+// 转台使能
+void MainWindow::RotEnable(){
+    // 确定控制的轴数
+    QString btnName = QObject::sender()->objectName();
 
-        
-    /*else if(btnName==ui->innRStop->objectName()){
-        datasend[3]=datain.outframe.innstop;        style=16;
-    }else if(btnName==ui->midRStop->objectName()){
-        datasend[3]=datain.outframe.midstop;        style=26;
-    }else if(btnName==ui->outRStop->objectName()){
-        datasend[3]=datain.outframe.outstop;        style=36;
-    }else if(btnName==ui->innREnable->objectName()){
-        datasend[3]=datain.outframe.innenable;      style=15;
-    }else if(btnName==ui->midREnable->objectName()){
-        datasend[3]=datain.outframe.midenable;      style=25;
-    }else if(btnName==ui->outREnable->objectName()){
-        datasend[3]=datain.outframe.outenable;      style=35;
-    }*/
+    QByteArray datasend;
+    datasend.resize(datain.outframe.len);
+    datasend.fill(0);
+    datasend[0]=datain.outframe.start1;   datasend[1]=datain.outframe.start2;
+    datasend[2]=datain.outframe.start3;
+    uint style=0;
+    double paratmp1=0;
+    double paratmp2=0;
 
-    // 如果style的最后一位小于5，则为设置参数1，2，低字节在前
+    if(btnName==ui->inncheckBox->objectName()){
+        style=15;
+        if(ui->inncheckBox->isChecked()){
+            // 使能
+            paratmp1=1;
+            paratmp2=0;
+        }else{
+            // 失能
+            paratmp1=0;
+            paratmp2=0;
+        }
+    }else if(btnName==ui->midcheckBox->objectName()){
+        style=25;
+        if(ui->midcheckBox->isChecked()){
+            // 使能
+            paratmp1=1;
+            paratmp2=0;
+        }else{
+            // 失能
+            paratmp1=0;
+            paratmp2=0;
+        }
+    }else if(btnName==ui->outcheckBox->objectName()){
+        style=35;
+        if(ui->outcheckBox->isChecked()){
+            // 使能
+            paratmp1=1;
+            paratmp2=0;
+        }else{
+            // 失能
+            paratmp1=0;
+            paratmp2=0;
+        }
+    }
     //发送数据
     writeThread.writeData(datain.rotSend(style,paratmp1,paratmp2));
 }
@@ -398,65 +445,53 @@ void MainWindow::recieve(const QByteArray &data){
     //测试
     //ui->textDebug->append(s.toHex(' '));
 
-    //开始位置
-    int pos=s.indexOf(datain.inframe.start,1);
-    //最大长度
-    int lenmax=max(datain.inframe.lens1,datain.inframe.lens2);
-    //(datain.inframe.lens1>datain.inframe.lens2)?datain.inframe.lens1:datain.inframe.lens2;
+    // 检查datain.inframe.typenum数量,1为只有imu数据，2为有imu和rot数据
+    if(datain.inframe.typenum==1){
+        // 只有imu数据而没有rot数据
+        // 开始位置
+        int pos=s.indexOf(datain.inframe.start,1);
+        // 最大长度
+        int lenmax=datain.inframe.lens1;
+        // 解帧
+        while(pos>=0){
+            // 有一帧的长度
+            if(pos+lenmax-1<s.size()){   //判断是否为帧头
+                // 判断帧尾是否正确
+                if((uint)(uchar)s[pos+datain.inframe.lens1-1]==datain.inframe.end){
+                    //是imu帧头
+                    dataImuNum++;
+                    //120惯导帧头1位，陀螺数据3*4位，温度3*2位，加速度数据3*4位
+                    //截取一帧imu数据
+                    //QByteArray dataimu=s.mid(pos+3,datain.inframe.lens1-4);
+                    QByteArray dataimu=s.mid(pos+1,datain.inframe.lens1-2);
+                    //imu数据解帧
+                    datain.updateImu(dataimu);
 
+                    // 保存数据
+                    if(Saving){
+                        // imu数据转为字符串，空格分隔
+                        dataimusp=datain.ImuToString();
+                        fileimu.write(dataimusp.toUtf8());
+                    }
+                    if(Naving){
+                        // 导航
+                        navthread.receiveData(datain.imu);
+                    }
+                    // 寻找下一个帧头
+                    pos=s.indexOf(datain.inframe.start,pos+datain.inframe.lens1);
 
-    // 解帧
-    while(pos>=0){
-        // 有一帧的长度
-        if(pos+lenmax-1<s.size()){   //判断是否为帧头
-            if((uint)(uchar)s[pos+1]==datain.inframe.type1\
-                &&(uint)(uchar)s[pos+datain.inframe.lens1-1]==datain.inframe.end){
-                //是imu帧头
-                dataImuNum++;
-                //解析imu数据，帧头2位，递增数1位，时间4位，陀螺数据3*4位，温度3*2位，加速度数据3*4位
-                //截取一帧imu数据
-                QByteArray dataimu=s.mid(pos+3,datain.inframe.lens1-4);
-                //imu数据解帧
-                datain.updateImu(dataimu);
-
-                // 保存数据
-                if(Saving){
-                    // imu数据转为字符串，空格分隔
-                    dataimusp=datain.ImuToString();
-                    fileimu.write(dataimusp.toUtf8());
+                }else{
+                    //不是帧头，寻找下一个帧头
+                    pos=s.indexOf(datain.inframe.start,pos+1);
                 }
-                if(Naving){
-                    // 导航
-                    navthread.receiveData(datain.imu);
-                }
-                // 寻找下一个帧头
-                pos=s.indexOf(datain.inframe.start,pos+datain.inframe.lens1);
-
-            }else if((uint)(uchar)s[pos+1]==datain.inframe.type2\
-                       &&(uint)(uchar)s[pos+datain.inframe.lens2-1]==datain.inframe.end){
-                // 是rot帧头2
-                dataRotNum++;
-                //解析rot数据
-                QByteArray datarot=s.mid(pos+3,datain.inframe.lens2-4);
-                //rot数据解帧
-                datain.updateRot(datarot);
-                if(Saving){
-                    // rot数据转为字符串，空格分隔
-                    datarotsp=datain.RotToString();
-                    filerot.write(datarotsp.toUtf8());
-                }
-                // 寻找下一个帧头
-                pos=s.indexOf(datain.inframe.start,pos+datain.inframe.lens2);
             }else{
-                //不是帧头，寻找下一个帧头
-                pos=s.indexOf(datain.inframe.start,pos+1);
+                //不够长度直接保存
+                auto lens=s.size()-pos;
+                dataTemp=s.right(lens);
+                break;
             }
-        }else{
-            //不够长度直接保存
-            auto lens=s.size()-pos;
-            dataTemp=s.right(lens);
-            break;
         }
+
     }
 }
 
